@@ -21,6 +21,7 @@
 include Chef::Resource::ApplicationBase
 
 attribute :database_master_role, :kind_of => [String, NilClass], :default => nil
+attribute :cache_master_role, :kind_of => [String, NilClass], :default => nil
 attribute :packages, :kind_of => [Array, Hash], :default => []
 attribute :requirements, :kind_of => [NilClass, String, FalseClass], :default => nil
 attribute :legacy_database_settings, :kind_of => [TrueClass, FalseClass], :default => false
@@ -30,6 +31,12 @@ attribute :settings_template, :kind_of => [String, NilClass], :default => nil
 attribute :local_settings_file, :kind_of => String, :default => 'local_settings.py'
 attribute :debug, :kind_of => [TrueClass, FalseClass], :default => false
 attribute :collectstatic, :kind_of => [TrueClass, FalseClass, String], :default => false
+attribute :collectstatic_cmd, :kind_of => [String,NilClass], :default => nil
+attribute :migration_command, :kind_of => [String,NilClass], :default => nil
+attribute :using_buildout, :kind_of => [TrueClass, FalseClass], :default => false
+attribute :buildout_cfg, :kind_of => [String,NilClass], :default => nil
+attribute :buildout_dir, :kind_of => [String,NilClass], :default => nil
+attribute :appsettings, :kind_of => Hash, :default => {}
 
 def local_settings_base
   local_settings_file.split(/[\\\/]/).last
@@ -43,4 +50,10 @@ def database(*args, &block)
   @database ||= Mash.new
   @database.update(options_block(*args, &block))
   @database
+end
+
+def cache(*args,&block)
+    @cache ||= Mash.new
+    @cache.update(options_block(*args,&block))
+    @cache
 end

@@ -35,13 +35,13 @@ end
 
 action :before_deploy do
 
-  install_packages
 
   created_settings_file
 
 end
 
 action :before_migrate do
+  install_packages
 
   if new_resource.requirements.nil?
     # look for requirements.txt files in common locations
@@ -69,9 +69,11 @@ end
 
 action :before_symlink do
 
+
   if new_resource.collectstatic
     cmd = new_resource.collectstatic.is_a?(String) ? new_resource.collectstatic : "collectstatic --noinput"
-    execute "#{::File.join(new_resource.virtualenv, "bin", "python")} manage.py #{cmd}" do
+    new_resource.collectstatic_cmd = "bin/python manage.py cmd #{cmd}" if !new_resource.collectstatic_cmd
+    execute new_resource.collectstatic_cmd do
       user new_resource.owner
       group new_resource.group
       cwd new_resource.release_path
@@ -98,22 +100,51 @@ end
 protected
 
 def install_packages
-  python_virtualenv new_resource.virtualenv do
-    path new_resource.virtualenv
-    action :create
-  end
-
-  new_resource.packages.each do |name, ver|
-    python_pip name do
-      version ver if ver && ver.length > 0
-      virtualenv new_resource.virtualenv
-      action :install
+  if new_resource.using_buildout
+    if new_resource.buildout_dir
+        directory "#{new_resource.buildout_dir}/.buildout/eggs" do
+            recursive true
+            user new_resource.owner
+            group new_resource.group
+        end
+        directory "#{new_resource.buildout_dir}/.buildout/cache" do
+            recursive true
+            user new_resource.owner
+            group new_resource.group
+        end
     end
+
+    new_resource.buildout_cfg = "buildout.cfg" if !new_resource.buildout_cfg
+
+    execute "python bootstrap.py --distribute" do
+      user new_resource.owner
+      group new_resource.group
+      cwd new_resource.release_path
+    end
+    execute "bin/buildout -c %s" % [new_resource.buildout_cfg] do
+      user new_resource.owner
+      group new_resource.group
+      cwd new_resource.release_path
+    end
+  else
+      python_virtualenv new_resource.virtualenv do
+        path new_resource.virtualenv
+        action :create
+      end
+
+      new_resource.packages.each do |name, ver|
+        python_pip name do
+          version ver if ver && ver.length > 0
+          virtualenv new_resource.virtualenv
+          action :install
+        end
+      end
   end
 end
 
 def created_settings_file
   host = new_resource.find_database_server(new_resource.database_master_role)
+  cache_host = new_resource.find_database_server(new_resource.cache_master_role)
 
   template "#{new_resource.path}/shared/#{new_resource.local_settings_base}" do
     source new_resource.settings_template || "settings.py.erb"
@@ -126,6 +157,11 @@ def created_settings_file
       :host => host,
       :settings => new_resource.database,
       :legacy => new_resource.legacy_database_settings
-    }
+    },
+    :cache => {
+      :host => cache_host,
+      :settings => new_resource.cache
+    },
+    :appsettings => new_resource.appsettings
   end
 end

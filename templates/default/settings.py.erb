@@ -10,6 +10,35 @@ DATABASES = {
         'PORT': '<%= @database[:settings][:port]  %>',
     },
 }
+
+
+BROKER_TRANSPORT = "redis"
+BROKER_HOST = "<%= @cache[:host] %>"  # Maps to redis host.
+BROKER_PORT = <%= @cache[:settings][:port] %>         # Maps to redis port.
+BROKER_VHOST = "<%= @cache[:settings][:vhost] %>"         # Maps to database number.
+
+CACHE_BACKEND = 'redis_cache.cache://%s:%d' % (BROKER_HOST, BROKER_PORT)
+CACHES = {
+<% @cache[:settings][:caches].each do |c| %>
+    '<%= c[:name] %>': {
+        'BACKEND': 'redis_cache.RedisCache',
+        'LOCATION': '%s:%d' % (BROKER_HOST, BROKER_PORT),
+        'TIMEOUT': 5,
+        'KEY_PREFIX': '<%= c[:key_prefix] %>',
+        'VERSION': <%= @cache[:settings][:version] %>,               # Bump this to force flush of cache when deploying
+        'OPTIONS': {
+        'DB': <%= c[:db] %>,
+            'PASSWORD': '',
+            'PARSER_CLASS': 'redis.connection.HiredisParser'
+        },
+    },
+<% end %>
+}
+
+<% @appsettings.each do |k,v| %>
+<%= k %> = "<%= v %>"
+<% end %>
+
 <% if @database[:legacy] -%>
 DATABASE_ENGINE = DATABASES['default']['ENGINE']
 DATABASE_NAME = DATABASES['default']['NAME']
