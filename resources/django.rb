@@ -35,7 +35,6 @@ attribute :collectstatic_cmd, :kind_of => [String,NilClass], :default => nil
 attribute :migration_command, :kind_of => [String,NilClass], :default => nil
 attribute :using_buildout, :kind_of => [TrueClass, FalseClass], :default => false
 attribute :buildout_cfg, :kind_of => [String,NilClass], :default => nil
-attribute :buildout_dir, :kind_of => [String,NilClass], :default => nil
 attribute :appsettings, :kind_of => Hash, :default => {}
 
 def local_settings_base

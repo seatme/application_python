@@ -101,17 +101,15 @@ protected
 
 def install_packages
   if new_resource.using_buildout
-    if new_resource.buildout_dir
-        directory "#{new_resource.buildout_dir}/.buildout/eggs" do
-            recursive true
-            user new_resource.owner
-            group new_resource.group
-        end
-        directory "#{new_resource.buildout_dir}/.buildout/cache" do
-            recursive true
-            user new_resource.owner
-            group new_resource.group
-        end
+    directory "#{new_resource.path}/.buildout/eggs" do
+        recursive true
+        user new_resource.owner
+        group new_resource.group
+    end
+    directory "#{new_resource.path}/.buildout/cache" do
+        recursive true
+        user new_resource.owner
+        group new_resource.group
     end
 
     new_resource.buildout_cfg = "buildout.cfg" if !new_resource.buildout_cfg
