@@ -114,7 +114,7 @@ def install_packages
 
     new_resource.buildout_cfg = "buildout.cfg" if !new_resource.buildout_cfg
 
-    execute "python bootstrap.py --distribute" do
+    execute "python bootstrap.py --distribute -v 2.0.0" do
       user new_resource.owner
       group new_resource.group
       cwd new_resource.release_path
