@@ -119,7 +119,7 @@ def install_packages
       group new_resource.group
       cwd new_resource.release_path
     end
-    execute "bin/buildout -c %s" % [new_resource.buildout_cfg] do
+    execute "bin/buildout -vN -c %s" % [new_resource.buildout_cfg] do
       user new_resource.owner
       group new_resource.group
       cwd new_resource.release_path
