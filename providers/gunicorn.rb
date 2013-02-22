@@ -20,7 +20,7 @@
 
 require 'tmpdir'
 
-include Chef::Mixin::LanguageIncludeRecipe
+include Chef::DSL::IncludeRecipe
 
 action :before_compile do
 
@@ -32,7 +32,7 @@ action :before_compile do
   gunicorn_install "gunicorn-#{new_resource.application.name}" do
     virtualenv django_resource ? django_resource.virtualenv : new_resource.virtualenv
   end
-  
+
   if !new_resource.restart_command
     new_resource.restart_command do
       run_context.resource_collection.find(:supervisor_service => new_resource.application.name).run_action(:restart)

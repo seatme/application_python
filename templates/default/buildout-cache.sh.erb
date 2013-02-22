@@ -1,0 +1,22 @@
+#!/bin/sh
+
+S3_PREFIX="<%= @s3_prefix %>"
+S3CMD_CFG="<%= @s3cmd_cfg %>"
+BUILDOUT_CFG="<%= @buildout_cfg %>"
+N=`cat *cfg setup.py | md5sum | awk '{ print $1 }'`
+
+s3cmd -c $S3CMD_CFG get $S3_PREFIX/buildout-$N.tar /mnt/www/buildout-$N.tar
+need_buildout_update=0
+if [ -f /mnt/www/buildout-$N.tar ]; then
+    tar xvfP /mnt/www/buildout-$N.tar
+    need_buildout_update=1
+fi
+
+python bootstrap.py --distribute -v 2.0.0
+bin/buildout -vN -c $BUILDOUT_CFG
+
+if [ $need_buildout_update = 1 ]; then
+    tar cvfP /mnt/www/buildout-$N.tar /mnt/www/.buildout
+    s3cmd -c $S3CMD_CFG put $S3_PREFIX/buildout-$N.tar /mnt/www/buildout-$N.tar 
+fi
+

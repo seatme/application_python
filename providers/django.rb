@@ -20,7 +20,7 @@
 
 require 'tmpdir'
 
-include Chef::Mixin::LanguageIncludeRecipe
+include Chef::DSL::IncludeRecipe
 
 action :before_compile do
 
@@ -112,17 +112,30 @@ def install_packages
         group new_resource.group
     end
 
-    new_resource.buildout_cfg = "buildout.cfg" if !new_resource.buildout_cfg
 
-    execute "python bootstrap.py --distribute -v 2.0.0" do
-      user new_resource.owner
-      group new_resource.group
-      cwd new_resource.release_path
-    end
-    execute "bin/buildout -vN -c %s" % [new_resource.buildout_cfg] do
-      user new_resource.owner
-      group new_resource.group
-      cwd new_resource.release_path
+    new_resource.buildout_cfg = "buildout.cfg" if !new_resource.buildout_cfg
+    if new_resource.buildout_cache_s3_prefix && new_resource.s3cmd_cfg
+        template "/mnt/www/buildout-cache.sh" do
+            source "buildout-cache.sh.erb"
+            owner "root"
+            mode 0755
+            variables(:s3_prefix => new_resource.buildout_cache_s3_prefix, :s3cmd_cfg => new_resource.s3cmd_cfg, :buildout_cfg => new_resource.buildout_cfg)
+        end
+
+        execute "update buildout cache" do
+            command "/mnt/www/buildout-cache.sh"
+        end
+    else
+        execute "python bootstrap.py --distribute -v 2.0.0" do
+          user new_resource.owner
+          group new_resource.group
+          cwd new_resource.release_path
+        end
+        execute "bin/buildout -vN -c %s" % [new_resource.buildout_cfg] do
+          user new_resource.owner
+          group new_resource.group
+          cwd new_resource.release_path
+        end
     end
   else
       python_virtualenv new_resource.virtualenv do
